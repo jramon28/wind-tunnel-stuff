@@ -4,7 +4,7 @@ clc;
 %% Pressure coefficent 
 Qinf = 1/2*(1.1807)*(35^2); % Q inf
 rho = 1.1807; % density
-pinf = 728.45; 
+pinf = 238.069; 
 xc = [0 0.075 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8]; % chord length percentage
 xc_up = [0 0.075 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8];
 xc_low = [0 0.075 0.1 0.2 0.3 0.4 0.5 0.6 0.7];
