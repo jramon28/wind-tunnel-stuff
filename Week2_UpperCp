@@ -1,0 +1,40 @@
+% Week 2: compute q_infty for 3 speeds, then Cp_upper for one 9-point dataset
+
+clear; clc;
+
+rho = 1.18;                 % [kg/m^3]  <- from Week 1 density calculation
+
+U = [20 35 50];             % [m/s]     <- your three freestream speeds
+
+% Static pressure P_infty for each speed, in inches of water (inH2O)
+Pinf_inH2O = [ 250 750 1400 ];   % length 3
+
+% 9 upper-surface pressures in Pa
+Pupper_inH2O = [ -243 -557 -689 -615 -554 -503 -402 -315 -167];  % length 9
+
+% Which speed does this dataset correspond to? (1,2,or3)
+k = 2;  % example: 2 means it’s the middle speed (U=35 m/s)
+
+% Dynamic pressures q_infty for the 3 speeds 
+q = 0.5 * rho .* (U.^2);    % [Pa]
+
+Pinf = Pinf_inH2O;         % [Pa]
+Pup  = Pupper_inH2O;     % [Pa]
+
+% Cp for upper surface 
+Cp_upper = (Pup - Pinf(k)) ./ q(k);
+
+
+x_over_c_upper = [.075 .1 .2 .3 .4 .5 .6 .7 .8];
+
+% --- Plot Cp_upper vs chordwise distance ---
+[xs, idx] = sort(x_over_c_upper);
+
+figure;
+plot(xs, Cp_upper(idx), 'o-', 'LineWidth', 1.5, 'MarkerSize', 6);
+grid on;
+set(gca,'YDir')  % standard aerodynamic convention
+
+xlabel('Chordwise location, x/c');
+ylabel('C_p (upper)');
+title(sprintf('Upper Surface Pressure Coefficient (U = %.1f m/s)', U(k)));
