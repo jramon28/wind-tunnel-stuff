@@ -1,0 +1,34 @@
+clear all;
+close all;
+clc;
+%% Pressure coefficent 
+Qinf = 1/2*(1.1807)*(35^2); % Q inf
+rho = 1.1807; % density
+pinf = 728.45; 
+xc = [0 0.075 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8]; % chord length percentage
+xc_up = [0 0.075 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8];
+xc_low = [0 0.075 0.1 0.2 0.3 0.4 0.5 0.6 0.7];
+% Upper surface  (p0 p1–p9)
+P_upper = [507.329934; 80.005596; -265.402885; -476.210836; -482.964701;
+-463.413370; -421.325124; -371.692693; -311.849010; -176.226423;];
+
+% Lower surface (p0 p10–p17)
+P_lower = [507.329934; -983.267860; -926.017216; -309.520926; -251.737737; 
+-193.956847; -163.769945; -136.757082; -106.825907;];
+
+CpU = (P_upper-pinf)./Qinf;
+CpL = (P_lower-pinf)./Qinf;
+Cp_total = CpL - CpU(1:length(CpL));
+
+
+%% Net lift Cp
+figure; hold on; grid on;
+
+plot(xc_up, CpU,'-o','LineWidth',1.6,'Color','r');    % Upper surface
+plot(xc_low, CpL,'-o','LineWidth',1.6,'Color','b');   % Lower surface
+plot(xc_low, Cp_total,'-ok','LineWidth',2);           % Net lift Cp
+
+xlabel('x/c');
+ylabel('C_p');
+title('Airfoil Pressure Distribution (U = 35 m/s, AoA = 0°)');
+legend('Cp Upper','Cp Lower','Cp Total (L-U)','Location','Best');
