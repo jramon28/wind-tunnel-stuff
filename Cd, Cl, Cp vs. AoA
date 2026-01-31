@@ -1,0 +1,118 @@
+clear; close all; clc;
+
+
+xc_up  = [0 0.075 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8];
+xc_low = [0 0.075 0.1 0.2 0.3 0.4 0.5 0.6 0.7];
+x = xc_low;
+
+
+AoA_deg = [0 4 8 12 16];
+AoA_rad = deg2rad(AoA_deg);
+
+speed_names = ["twenty","thirty five","fifty"];
+U_list = [20 35 50];
+
+% Static pressure for each speed (Pa)
+pinf_list = [238.069, 728.45, 1313.75];
+
+% AoA names (for filenames)
+aoa_names = ["zero","four","eight","twelve","sixteen"];
+
+
+rho = 1.1807;
+
+% storage 
+CL = zeros(numel(U_list), numel(AoA_deg));
+CD = zeros(numel(U_list), numel(AoA_deg));
+CN = zeros(numel(U_list), numel(AoA_deg));
+
+
+
+
+% Storage for Cp
+% CpU_all(i, j, k) -> speed i, AoA j, tap k (upper)
+% CpL_all(i, j, k) -> speed i, AoA j, tap k (lower)
+
+CpU_all = nan(numel(U_list), numel(AoA_deg), numel(xc_up));
+CpL_all = nan(numel(U_list), numel(AoA_deg), numel(xc_low));
+dCp_all = nan(numel(U_list), numel(AoA_deg), numel(xc_low)); % CpL - CpU over common region
+
+% loop
+for i = 1:numel(U_list)
+    U = U_list(i);
+    Qinf = 0.5*rho*U^2;
+    pinf = pinf_list(i);
+
+    for j = 1:numel(AoA_deg)
+        alpha = AoA_rad(j);
+
+        % Build filename like: "fifty - zero"
+        fname = speed_names(i) + " - " + aoa_names(j);
+        disp("Reading: " + fname)
+
+        data = readmatrix(fname, 'NumHeaderLines', 2);
+        P = data(:,2);
+
+        % Pressure taps
+        P_upper = P(1:10);
+        P_lower = P([1, 11:18]);
+
+        % Cp
+        CpU = (P_upper - pinf)./Qinf;
+        CpL = (P_lower - pinf)./Qinf;
+
+        % Store Cp for plotting later
+        CpU_all(i,j,:) = CpU;
+        CpL_all(i,j,:) = CpL;
+
+        % Difference on common grid
+        dCp = CpL - CpU(1:numel(CpL));
+        dCp_all(i,j,:) = dCp;
+
+
+        % CN, CL, CD
+        CN(i,j) = trapz(x, dCp);
+        CL(i,j) = CN(i,j)*cos(alpha);   % CA ~ 0
+        CD(i,j) = CN(i,j)*sin(alpha);
+    end
+end
+
+
+% Plot CL vs AoA
+
+figure; grid on; hold on;
+for i = 1:numel(U_list)
+    plot(AoA_deg, CL(i,:), '-o', 'LineWidth', 1.5, ...
+        'DisplayName', sprintf('U = %d m/s', U_list(i)));
+end
+xlabel('Angle of Attack, \alpha (deg)');
+ylabel('C_L');
+title('C_L vs Angle of Attack');
+legend('Location','Best');
+
+
+% Plot CD vs AoA
+figure; grid on; hold on;
+for i = 1:numel(U_list)
+    plot(AoA_deg, CD(i,:), '-o', 'LineWidth', 1.5, ...
+        'DisplayName', sprintf('U = %d m/s', U_list(i)));
+end
+xlabel('Angle of Attack, \alpha (deg)');
+ylabel('C_D');
+title('C_D vs Angle of Attack');
+legend('Location','Best');
+
+
+% "Cp total" vs AoA (use CN = integral of (CpL - CpU) over x/c)
+
+figure; grid on; hold on;
+
+for i = 1:numel(U_list)
+    plot(AoA_deg, CN(i,:), '-o', 'LineWidth', 1.5, ...
+        'DisplayName', sprintf('U = %d m/s', U_list(i)));
+end
+
+xlabel('Angle of Attack, \alpha (deg)');
+ylabel('C_p');
+title('Total Net Pressure Coefficient vs AoA');
+legend('Location','Best');
