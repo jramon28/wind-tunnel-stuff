@@ -1,0 +1,74 @@
+%% Cm,LE vs AoA for each airspeed 
+clear; close all; clc;
+
+
+xc_low = [0 0.075 0.1 0.2 0.3 0.4 0.5 0.6 0.7];
+xi = xc_low(:);                 % force column vector
+
+% AoA and speeds
+
+AoA_deg  = [0 4 8 12 16];
+AoA_rad  = deg2rad(AoA_deg);   
+
+speed_names = ["twenty","thirty five","fifty"];
+U_list = [20 35 50];
+
+% Static pressure for each speed (Pa)
+pinf_list = [238.069, 728.45, 1313.75];
+
+% AoA (filenames)
+aoa_names = ["zero","four","eight","twelve","sixteen"];
+
+
+rho = 1.1807;
+CmLE = zeros(numel(U_list), numel(AoA_deg));
+
+
+% loop: compute Cp, compute CmLE
+
+for i = 1:numel(U_list)
+    U    = U_list(i);
+    Qinf = 0.5*rho*U^2;
+    pinf = pinf_list(i);
+
+    for j = 1:numel(AoA_deg)
+
+        % build filename like: "fifty - zero"
+        fname = speed_names(i) + " - " + aoa_names(j);
+        disp("Reading: " + fname)
+
+        data = readmatrix(fname, 'NumHeaderLines', 2);
+        P = data(:,2);
+
+        % Pressure taps (matching your ordering)
+        P_upper = P(1:10);
+        P_lower = P([1, 11:18]);
+
+        % Cp
+        CpU = (P_upper - pinf)./Qinf;    % 10x1
+        CpL = (P_lower - pinf)./Qinf;    % 9x1
+
+        % Match CpU to the same 9 x/c locations as CpL (common grid)
+        CpU_common = CpU(1:numel(CpL));
+
+        % Force column vectors (prevents row/column mismatch)
+        CpU_common = CpU_common(:);
+        CpL        = CpL(:);
+
+        % Moment coefficient Eq
+        CmLE(i,j) = trapz(xi, (CpU_common - CpL) .* xi);
+    end
+end
+
+
+% Plot Cm,LE vs AoA (3 curves on 1 figure)
+
+figure; grid on; hold on;
+for i = 1:numel(U_list)
+    plot(AoA_deg, CmLE(i,:), '-o', 'LineWidth', 1.5, ...
+        'DisplayName', sprintf('U = %d m/s', U_list(i)));
+end
+xlabel('Angle of Attack, \alpha (deg)');
+ylabel('C_{m,LE}');
+title('Moment Coefficient about Leading Edge vs AoA');
+legend('Location','Best');
