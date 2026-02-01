@@ -1,0 +1,66 @@
+clear all;
+close all;
+clc;
+%% Week 3 
+masterData = readmatrix("String Balance Data.xlsx"); 
+nullData = readmatrix("null data");
+
+% Subtract null from measured data
+Axial_corr = masterData(:,6) - nullData(5);  % Axial
+Norm_corr  = masterData(:,7) - nullData(6);  % Normal
+
+airspeed = masterData(:,1);
+AoA      = masterData(:,3);
+alpha    = deg2rad(AoA);
+
+% ----- Compute Lift & Drag -----
+Lift = Norm_corr .* cos(alpha) - Axial_corr .* sin(alpha);
+Drag = Norm_corr .* sin(alpha) + Axial_corr .* cos(alpha);
+
+% ----- Error propagation using null std and measurement std -----
+Axial_std = sqrt(masterData(:,12).^2 + 0.044103^2); 
+Norm_std  = sqrt(masterData(:,13).^2 + 0.256525^2);
+
+Lift_std = sqrt( (Norm_std .* cos(alpha)).^2 + (Axial_std .* sin(alpha)).^2 );
+Drag_std = sqrt( (Norm_std .* sin(alpha)).^2 + (Axial_std .* cos(alpha)).^2 );
+
+rho = 1.1807;
+c = 0.0889; % chord length in meters
+
+% ----- Exclude zero airspeed for CL/CD -----
+nonZeroIdx = airspeed > 0;
+q = 0.5 * rho .* (airspeed(nonZeroIdx).^2);
+
+CL = Lift(nonZeroIdx) ./ (q * c);
+CD = Drag(nonZeroIdx) ./ (q * c);
+CL_std = Lift_std(nonZeroIdx) ./ (q * c);
+CD_std = Drag_std(nonZeroIdx) ./ (q * c);
+AoA_plot = AoA(nonZeroIdx);
+airspeed_plot = airspeed(nonZeroIdx);
+
+% ----- Plot CL vs AoA -----
+uniqueV = unique(round(airspeed_plot,2));
+colors = lines(length(uniqueV));
+
+figure; hold on; grid on;
+for i = 1:length(uniqueV)
+    idx = airspeed_plot == uniqueV(i);
+    errorbar(AoA_plot(idx), CL(idx), CL_std(idx), '-o', 'Color', colors(i,:), ...
+             'DisplayName', sprintf('V = %.0f m/s', uniqueV(i)));
+end
+xlabel('Angle of Attack (deg)');
+ylabel('C_L');
+title('Lift Coefficient vs AoA');
+legend('Location','best');
+
+% ----- Plot CD vs AoA -----
+figure; hold on; grid on;
+for i = 1:length(uniqueV)
+    idx = airspeed_plot == uniqueV(i);
+    errorbar(AoA_plot(idx), CD(idx), CD_std(idx), '-o', 'Color', colors(i,:), ...
+             'DisplayName', sprintf('V = %.0f m/s', uniqueV(i)));
+end
+xlabel('Angle of Attack (deg)');
+ylabel('C_D');
+title('Drag Coefficient vs AoA');
+legend('Location','best');
