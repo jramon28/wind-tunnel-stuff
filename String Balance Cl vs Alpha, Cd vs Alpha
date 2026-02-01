@@ -6,8 +6,9 @@ masterData = readmatrix("String Balance Data.xlsx");
 nullData = readmatrix("null data");
 
 % Subtract null from measured data
-Axial_corr = masterData(:,6) - nullData(5);  % Axial
-Norm_corr  = masterData(:,7) - nullData(6);  % Normal
+Pitch_corr = masterData(:,5) - nullData(1,4);
+Axial_corr = masterData(:,6) - nullData(1,5);  % Axial
+Norm_corr  = masterData(:,7) - nullData(1,6);  % Normal
 
 airspeed = masterData(:,1);
 AoA      = masterData(:,3);
